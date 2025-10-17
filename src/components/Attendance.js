@@ -10,6 +10,7 @@ export default function Attendance() {
     jam_masuk: "",
     jam_pulang: "",
     status: "hadir",
+    tipe_kerja: "WFO",
   });
 
   const refresh = () => setList(api.attendance.findAll());
@@ -27,6 +28,7 @@ export default function Attendance() {
       jam_masuk: "",
       jam_pulang: "",
       status: "hadir",
+      tipe_kerja: "WFO",
     });
     refresh();
   };
@@ -85,6 +87,17 @@ export default function Attendance() {
             <option>alpa</option>
           </select>
         </div>
+        <div>
+          <label>Tipe Kerja</label>
+          <select
+            value={form.tipe_kerja}
+            onChange={(e) => setForm({ ...form, tipe_kerja: e.target.value })}
+          >
+            <option value="WFO">WFO (Work From Office)</option>
+            <option value="WFH">WFH (Work From Home)</option>
+            <option value="Hybrid">Hybrid</option>
+          </select>
+        </div>
         <div className="flex">
           <button className="btn" onClick={submit}>
             Catat
@@ -101,6 +114,7 @@ export default function Attendance() {
               <th>Masuk</th>
               <th>Pulang</th>
               <th>Status</th>
+              <th>Tipe Kerja</th>
             </tr>
           </thead>
           <tbody>
@@ -113,12 +127,21 @@ export default function Attendance() {
                   <td>{a.jam_masuk}</td>
                   <td>{a.jam_pulang}</td>
                   <td>{a.status}</td>
+                  <td>
+                    <span
+                      className={`badge badge-${
+                        a.tipe_kerja?.toLowerCase() || "wfo"
+                      }`}
+                    >
+                      {a.tipe_kerja || "WFO"}
+                    </span>
+                  </td>
                 </tr>
               );
             })}
             {list.length === 0 && (
               <tr>
-                <td colSpan="5">
+                <td colSpan="6">
                   <i>Belum ada catatan.</i>
                 </td>
               </tr>

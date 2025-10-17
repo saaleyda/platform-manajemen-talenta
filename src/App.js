@@ -1,7 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import AddEmployee from "./components/AddEmployee";
+import AdminDashboard from "./components/AdminDashboard"; // Admin Dashboard Component
 import Attendance from "./components/Attendance";
-import Dashboard from "./components/Dashboard";
+import EmployeeDashboard from "./components/EmployeeDashboard"; // Employee Dashboard Component
 import EmployeeDetail from "./components/EmployeeDetail";
 import EmployeeList from "./components/EmployeeList";
 import Leave from "./components/Leave";
@@ -26,9 +27,19 @@ export default function App() {
             element={user ? <Navigate to="/dashboard" /> : <Login />}
           />
 
-          {/* semua halaman di bawah ini butuh login */}
+          {/* Semua halaman di bawah ini butuh login */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
+            {/* Rute Dashboard berdasarkan Role */}
+            <Route
+              path="/dashboard"
+              element={
+                user?.role === "Admin" ? (
+                  <AdminDashboard /> // Admin Dashboard
+                ) : (
+                  <EmployeeDashboard /> // Employee Dashboard
+                )
+              }
+            />
 
             {/* Data Karyawan: Admin & HR */}
             <Route element={<RequireRole allow={["Admin", "HR"]} />}>
@@ -45,7 +56,7 @@ export default function App() {
               <Route path="/payroll" element={<Payroll />} />
             </Route>
 
-            {/* Cuti: semua boleh akses (approve hanya Admin/HR di halaman) */}
+            {/* Cuti: Semua boleh akses (approve hanya Admin/HR di halaman) */}
             <Route path="/leave" element={<Leave />} />
 
             {/* Performance/Talenta: Admin & HR */}

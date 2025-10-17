@@ -1,5 +1,3 @@
-// src/services/api.js
-
 const LS = {
   users: "hr_users",
   employees: "hr_employees",
@@ -76,11 +74,7 @@ export function getCurrentUser() {
   return JSON.parse(localStorage.getItem(LS.session) || "null");
 }
 
-/** === REGISTER (baru) ===
- * - Validasi username unik
- * - Buat user baru (+ optional auto-buat record employee minimal)
- * - Auto-login (return session)
- */
+/** === REGISTER === */
 export function register({ username, password, email, role = "Karyawan" }) {
   const users = get(LS.users);
 
@@ -101,7 +95,6 @@ export function register({ username, password, email, role = "Karyawan" }) {
   users.push(newUser);
   set(LS.users, users);
 
-  // Auto-buat record employee basic (opsional, boleh dihapus jika tak perlu)
   const emps = get(LS.employees);
   emps.push({
     employee_id: uid("emp"),
@@ -115,7 +108,6 @@ export function register({ username, password, email, role = "Karyawan" }) {
   });
   set(LS.employees, emps);
 
-  // Auto-login setelah register
   const token = btoa(
     JSON.stringify({ sub: newUser.user_id, role: newUser.role, ts: Date.now() })
   );
@@ -129,7 +121,7 @@ export function register({ username, password, email, role = "Karyawan" }) {
   return session;
 }
 
-/** Login / Logout (mock; di produksi ganti JWT dari server) */
+/** === LOGIN === */
 export async function login(username, password) {
   const users = get(LS.users);
   const found = users.find(
@@ -202,6 +194,14 @@ export const attendance = {
     const row = { attendance_id: uid("att"), ...payload };
     data.push(row);
     set(LS.attendance, data);
+  },
+  approve(id, status) {
+    const data = get(LS.attendance);
+    const i = data.findIndex((a) => a.attendance_id === id);
+    if (i >= 0) {
+      data[i].status = status; // Approved or Denied
+      set(LS.attendance, data);
+    }
   },
 };
 
