@@ -11,6 +11,10 @@ export default function Performance() {
     catatan: "",
   });
 
+  // Cek apakah user adalah HR
+  const currentUser = api.getCurrentUser();
+  const isHR = currentUser?.role === "HR";
+
   useEffect(() => {
     setEmployees(api.employees.findAll());
     setList(api.performance.findAll());
@@ -18,6 +22,15 @@ export default function Performance() {
 
   const submit = (e) => {
     e.preventDefault();
+
+    // Blokir submit jika user adalah HR
+    if (isHR) {
+      alert(
+        "HR tidak memiliki akses untuk menambah atau mengubah data kinerja."
+      );
+      return;
+    }
+
     api.performance.create(form);
     setList(api.performance.findAll());
     setForm({
@@ -32,48 +45,71 @@ export default function Performance() {
     <div>
       <h1>Manajemen Talenta</h1>
 
-      <form className="card grid cols-3" onSubmit={submit}>
-        <div>
-          <label>Karyawan</label>
-          <select
-            value={form.employee_id}
-            onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
-          >
-            <option value="">- pilih -</option>
-            {employees.map((e) => (
-              <option key={e.employee_id} value={e.employee_id}>
-                {e.nama_lengkap}
-              </option>
-            ))}
-          </select>
+      {/* Form hanya ditampilkan jika bukan HR */}
+      {!isHR && (
+        <form className="card grid cols-3" onSubmit={submit}>
+          <div>
+            <label>Karyawan</label>
+            <select
+              value={form.employee_id}
+              onChange={(e) =>
+                setForm({ ...form, employee_id: e.target.value })
+              }
+            >
+              <option value="">- pilih -</option>
+              {employees.map((e) => (
+                <option key={e.employee_id} value={e.employee_id}>
+                  {e.nama_lengkap}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label>Periode</label>
+            <input
+              value={form.periode}
+              onChange={(e) => setForm({ ...form, periode: e.target.value })}
+            />
+          </div>
+          <div>
+            <label>Nilai Kinerja</label>
+            <input
+              type="number"
+              value={form.nilai_kinerja}
+              onChange={(e) =>
+                setForm({ ...form, nilai_kinerja: e.target.value })
+              }
+            />
+          </div>
+          <div className="grid" style={{ gridTemplateColumns: "1fr" }}>
+            <label>Catatan</label>
+            <textarea
+              rows={2}
+              value={form.catatan}
+              onChange={(e) => setForm({ ...form, catatan: e.target.value })}
+            />
+          </div>
+          <button className="btn">Simpan</button>
+        </form>
+      )}
+
+      {/* Informasi untuk HR */}
+      {isHR && (
+        <div
+          className="card"
+          style={{
+            background: "#e3f2fd",
+            border: "1px solid #2196f3",
+            padding: "1rem",
+            marginBottom: "1rem",
+          }}
+        >
+          <p style={{ margin: 0, color: "#1976d2" }}>
+            ℹ️ Anda login sebagai HR. Anda hanya dapat melihat data kinerja
+            karyawan.
+          </p>
         </div>
-        <div>
-          <label>Periode</label>
-          <input
-            value={form.periode}
-            onChange={(e) => setForm({ ...form, periode: e.target.value })}
-          />
-        </div>
-        <div>
-          <label>Nilai Kinerja</label>
-          <input
-            type="number"
-            value={form.nilai_kinerja}
-            onChange={(e) =>
-              setForm({ ...form, nilai_kinerja: e.target.value })
-            }
-          />
-        </div>
-        <div className="grid" style={{ gridTemplateColumns: "1fr" }}>
-          <label>Catatan</label>
-          <textarea
-            rows={2}
-            value={form.catatan}
-            onChange={(e) => setForm({ ...form, catatan: e.target.value })}
-          />
-        </div>
-        <button className="btn">Simpan</button>
-      </form>
+      )}
 
       <div className="card">
         <table className="table">

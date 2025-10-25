@@ -6,6 +6,7 @@ const LS = {
   leave: "hr_leave",
   performance: "hr_performance",
   session: "hr_session",
+  resetTokens: "hr_reset_tokens",
 };
 
 const uid = (prefix = "id") =>
@@ -64,9 +65,11 @@ export function seed() {
       },
     ]);
   }
-  ["attendance", "payroll", "leave", "performance"].forEach((key) => {
-    if (!localStorage.getItem(LS[key])) set(LS[key], []);
-  });
+  ["attendance", "payroll", "leave", "performance", "resetTokens"].forEach(
+    (key) => {
+      if (!localStorage.getItem(LS[key])) set(LS[key], []);
+    }
+  );
 }
 
 /** Session */
@@ -146,6 +149,103 @@ export function logout() {
   localStorage.removeItem(LS.session);
 }
 
+/** === FORGOT PASSWORD === */
+export async function forgotPassword(email) {
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  const users = get(LS.users);
+  const user = users.find(
+    (u) => u.email && u.email.toLowerCase() === email.toLowerCase()
+  );
+
+  if (!user) {
+    throw new Error("Email tidak terdaftar");
+  }
+
+  const token = generateResetToken();
+  const resetData = {
+    email: email.toLowerCase(),
+    token: token,
+    expiresAt: Date.now() + 3600000,
+    createdAt: Date.now(),
+  };
+
+  const resetTokens = get(LS.resetTokens);
+  const filteredTokens = resetTokens.filter(
+    (rt) => rt.email !== email.toLowerCase()
+  );
+  filteredTokens.push(resetData);
+  set(LS.resetTokens, filteredTokens);
+
+  console.log("🔑 Reset Token (copy ini untuk testing):", token);
+  console.log("📧 Email:", email);
+  console.log("⏰ Expired dalam 1 jam");
+
+  return {
+    success: true,
+    message: "Link reset password telah dikirim ke email Anda",
+    devToken: token,
+  };
+}
+
+/** === RESET PASSWORD === */
+export async function resetPassword(token, newPassword) {
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error("Password minimal 6 karakter");
+  }
+
+  const resetTokens = get(LS.resetTokens);
+  const resetData = resetTokens.find(
+    (rt) => rt.token === token && rt.expiresAt > Date.now()
+  );
+
+  if (!resetData) {
+    throw new Error("Token tidak valid atau sudah expired");
+  }
+
+  const users = get(LS.users);
+  const userIndex = users.findIndex(
+    (u) => u.email && u.email.toLowerCase() === resetData.email
+  );
+
+  if (userIndex === -1) {
+    throw new Error("User tidak ditemukan");
+  }
+
+  users[userIndex].password = newPassword;
+  set(LS.users, users);
+
+  const updatedTokens = resetTokens.filter((rt) => rt.token !== token);
+  set(LS.resetTokens, updatedTokens);
+
+  console.log("✅ Password berhasil direset untuk:", resetData.email);
+
+  return {
+    success: true,
+    message: "Password berhasil direset",
+  };
+}
+
+function generateResetToken() {
+  return (
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15)
+  );
+}
+
+export function cleanupExpiredTokens() {
+  const resetTokens = get(LS.resetTokens);
+  const validTokens = resetTokens.filter((rt) => rt.expiresAt > Date.now());
+  set(LS.resetTokens, validTokens);
+  console.log(
+    `🧹 Cleanup: ${
+      resetTokens.length - validTokens.length
+    } expired tokens removed`
+  );
+}
+
 /* ================= EMPLOYEES ================= */
 export const employees = {
   findAll(q = "") {
@@ -195,11 +295,21 @@ export const attendance = {
     data.push(row);
     set(LS.attendance, data);
   },
+  // METHOD BARU: Update untuk approval status
+  update(id, payload) {
+    const data = get(LS.attendance);
+    const i = data.findIndex((a) => a.attendance_id === id);
+    if (i >= 0) {
+      data[i] = { ...data[i], ...payload };
+      set(LS.attendance, data);
+    }
+  },
+  // METHOD LAMA (bisa dihapus atau tetap dipertahankan untuk backward compatibility)
   approve(id, status) {
     const data = get(LS.attendance);
     const i = data.findIndex((a) => a.attendance_id === id);
     if (i >= 0) {
-      data[i].status = status; // Approved or Denied
+      data[i].status = status;
       set(LS.attendance, data);
     }
   },

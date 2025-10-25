@@ -17,11 +17,23 @@ export function AuthProvider({ children }) {
     return u;
   };
 
-  // NEW: register
+  // Register
   const register = async (payload) => {
     const u = await api.register(payload);
     setUser(u); // auto login
     return u;
+  };
+
+  // Forgot Password - kirim email reset
+  const forgotPassword = async (email) => {
+    const result = await api.forgotPassword(email);
+    return result;
+  };
+
+  // Reset Password - dengan token
+  const resetPassword = async (token, newPassword) => {
+    const result = await api.resetPassword(token, newPassword);
+    return result;
   };
 
   const logout = () => {
@@ -32,9 +44,18 @@ export function AuthProvider({ children }) {
   const hasRole = (...roles) => !!user && roles.includes(user.role);
 
   const value = useMemo(
-    () => ({ user, login, register, logout, hasRole }),
+    () => ({
+      user,
+      login,
+      register,
+      forgotPassword,
+      resetPassword,
+      logout,
+      hasRole,
+    }),
     [user]
   );
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
